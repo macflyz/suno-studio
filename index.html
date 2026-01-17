@@ -655,6 +655,27 @@
             </div>
         </div>
 
+        <div class="panel" style="margin-bottom: 20px; animation-delay: 0.3s;">
+            <h2 class="panel-title">🔑 Configurazione API</h2>
+            <div class="input-group">
+                <label class="label">Chiave API Anthropic</label>
+                <div style="position: relative;">
+                    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." onchange="saveApiKey()">
+                    <button onclick="toggleApiKeyVisibility()" type="button" class="copy-btn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); padding: 6px 12px; margin: 0;">
+                        👁️ Mostra
+                    </button>
+                </div>
+                <div class="info-box" style="margin-top: 10px;">
+                    <p><strong>ℹ️ Come ottenere la chiave:</strong></p>
+                    <p>1. Vai su <a href="https://console.anthropic.com" target="_blank" style="color: #d4af37;">console.anthropic.com</a></p>
+                    <p>2. Crea un account o accedi</p>
+                    <p>3. Vai su "API Keys" → "Create Key"</p>
+                    <p>4. Copia e incolla qui la chiave</p>
+                    <p style="margin-top: 10px; color: #c23b22;"><strong>⚠️ Sicurezza:</strong> La chiave viene salvata SOLO nel tuo browser, non viene inviata a nessun server esterno.</p>
+                </div>
+            </div>
+        </div>
+
         <button class="button" onclick="generatePrompt()" id="generateBtn" style="margin-bottom: 20px;">
             <span id="generateBtnText">🎵 Genera Prompt Professionale</span>
         </button>
@@ -700,7 +721,35 @@
         let currentStyle = '';
         let currentSongType = 'withLyrics';
 
+        // Gestione API Key
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (apiKey) {
+                localStorage.setItem('anthropic_api_key', apiKey);
+            }
+        }
+
+        function loadApiKey() {
+            const saved = localStorage.getItem('anthropic_api_key');
+            if (saved) {
+                document.getElementById('apiKey').value = saved;
+            }
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('apiKey');
+            const btn = event.target;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈 Nascondi';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️ Mostra';
+            }
+        }
+
         window.addEventListener('load', () => {
+            loadApiKey();
             document.getElementById('userInput').focus();
         });
 
@@ -727,6 +776,22 @@
         }
 
         async function generatePrompt() {
+            // Verifica API Key
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showError('⚠️ Per favore inserisci la tua chiave API Anthropic nel campo sopra.');
+                document.getElementById('apiKey').focus();
+                return;
+            }
+
+            if (!apiKey.startsWith('sk-ant-')) {
+                showError('⚠️ La chiave API dovrebbe iniziare con "sk-ant-". Verifica di aver copiato la chiave corretta.');
+                return;
+            }
+
+            // Salva la chiave per usi futuri
+            saveApiKey();
+
             const creationMode = document.querySelector('input[name="creationMode"]:checked').value;
             
             let userInput, lyricsTheme, language, artistReference, specialNotes, songType;
@@ -780,6 +845,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
                     },
                     body: JSON.stringify({
                         model: 'claude-sonnet-4-20250514',
@@ -796,7 +863,18 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Errore API: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    let errorMsg = `Errore API (${response.status})`;
+                    
+                    if (response.status === 401) {
+                        errorMsg = '🔑 Chiave API non valida. Verifica di aver copiato correttamente la chiave da console.anthropic.com';
+                    } else if (response.status === 429) {
+                        errorMsg = '⏸️ Limite di richieste raggiunto. Attendi qualche minuto e riprova.';
+                    } else if (errorData.error?.message) {
+                        errorMsg += ': ' + errorData.error.message;
+                    }
+                    
+                    throw new Error(errorMsg);
                 }
 
                 const data = await response.json();
@@ -822,7 +900,15 @@
 
             } catch (error) {
                 console.error('Errore:', error);
-                showError(`Si è verificato un errore: ${error.message}`);
+                let errorMsg = error.message;
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg = '🌐 Errore di connessione. Verifica di essere connesso a internet e riprova.';
+                } else if (error.message.includes('CORS')) {
+                    errorMsg = '⚠️ Errore CORS. Prova a ricaricare la pagina o usa un browser diverso (Chrome/Edge consigliati).';
+                }
+                
+                showError(errorMsg);
             } finally {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('generateBtn').disabled = false;
@@ -1093,6 +1179,42 @@ Esempio: "Synthwave pop, 171 BPM, ${songType === 'instrumental' ? 'instrumental'
                 errorDiv.style.display = 'none';
             }, 5000);
         }
+        // Registrazione Service Worker per PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registrato:', reg.scope))
+                    .catch(err => console.log('Errore Service Worker:', err));
+            });
+        }
+
+        // Gestione installazione PWA
+        let deferredPrompt;
+        const installBtn = document.createElement('button');
+        installBtn.className = 'button';
+        installBtn.innerHTML = '<span>📱 Installa App</span>';
+        installBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; width: auto; padding: 12px 24px; z-index: 1000; display: none;';
+        document.body.appendChild(installBtn);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Scelta utente: ${outcome}`);
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installata con successo!');
+            installBtn.style.display = 'none';
+        });
     </script>
 </body>
 </html>
