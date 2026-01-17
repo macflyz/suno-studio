@@ -1093,42 +1093,6 @@ Esempio: "Synthwave pop, 171 BPM, ${songType === 'instrumental' ? 'instrumental'
                 errorDiv.style.display = 'none';
             }, 5000);
         }
-        // Registrazione Service Worker per PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('Service Worker registrato:', reg.scope))
-                    .catch(err => console.log('Errore Service Worker:', err));
-            });
-        }
-
-        // Gestione installazione PWA
-        let deferredPrompt;
-        const installBtn = document.createElement('button');
-        installBtn.className = 'button';
-        installBtn.innerHTML = '<span>📱 Installa App</span>';
-        installBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; width: auto; padding: 12px 24px; z-index: 1000; display: none;';
-        document.body.appendChild(installBtn);
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block';
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Scelta utente: ${outcome}`);
-            deferredPrompt = null;
-            installBtn.style.display = 'none';
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA installata con successo!');
-            installBtn.style.display = 'none';
-        });
     </script>
 </body>
 </html>
