@@ -1,0 +1,48 @@
+{
+  "name": "Suno V5 Prompt Studio",
+  "short_name": "Suno Studio",
+  "description": "Generatore professionale di prompt per Suno V5 con analizzatore di canzoni esistenti",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "productivity", "entertainment"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuova Canzone",
+      "short_name": "Nuova",
+      "description": "Crea una nuova canzone da zero",
+      "url": "/?action=new",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Analizza Canzone",
+      "short_name": "Analizza",
+      "description": "Analizza una canzone esistente",
+      "url": "/?action=analyze",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

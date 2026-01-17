@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suno V5 Prompt Studio</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Generatore professionale di prompt per Suno V5 con analizzatore di canzoni">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Suno Studio">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vinyl-black: #0a0a0a;
+            --vintage-cream: #f4ede3;
+            --gold-accent: #d4af37;
+            --warm-red: #c23b22;
+            --studio-green: #2d5a3d;
+            --deep-blue: #1a2332;
+            --metallic: #8b8b8b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: linear-gradient(135deg, var(--vinyl-black) 0%, var(--deep-blue) 100%);
+            color: var(--vintage-cream);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(194, 59, 34, 0.03) 0%, transparent 50%);
+            animation: rotate 60s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .wave-decoration {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .wave-bar {
+            display: inline-block;
+            width: 2%;
+            height: 100%;
+            background: var(--gold-accent);
+            margin: 0 0.5%;
+            animation: wave 1.2s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+        .wave-bar:nth-child(7) { animation-delay: 0.6s; }
+        .wave-bar:nth-child(8) { animation-delay: 0.7s; }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 72px;
+            letter-spacing: 8px;
+            background: linear-gradient(135deg, var(--gold-accent) 0%, var(--warm-red) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+            margin-bottom: 10px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: var(--metallic);
+            text-transform: uppercase;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .studio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 20px;
+            padding: 35px;
+            transition: all 0.4s ease;
+            animation: slideUp 0.6s ease-out both;
+        }
+
+        .panel:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 20px 60px rgba(212, 175, 55, 0.1);
+            transform: translateY(-5px);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.1s; }
+        .panel:nth-child(2) { animation-delay: 0.2s; }
+
+        .panel-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 28px;
+            letter-spacing: 3px;
+            color: var(--gold-accent);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--gold-accent) 0%, var(--warm-red) 100%);
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--metallic);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        textarea, input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            padding: 18px;
+            color: var(--vintage-cream);
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        textarea {
+            min-height: 180px;
+            line-height: 1.6;
+        }
+
+        .button {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gold-accent) 0%, var(--warm-red) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 18px 32px;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 20px;
+            letter-spacing: 2px;
+            color: var(--vinyl-black);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--gold-accent);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .output-section {
+            margin-top: 40px;
+            animation: slideUp 0.6s ease-out 0.4s both;
+        }
+
+        .output-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+        }
+
+        .output-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: var(--gold-accent);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .output-content {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--vintage-cream);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .output-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: var(--gold-accent);
+            border-radius: 4px;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--gold-accent);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--gold-accent);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .copy-btn:hover {
+            background: var(--gold-accent);
+            color: var(--vinyl-black);
+            transform: translateY(-2px);
+        }
+
+        .example-prompts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .example-chip {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 13px;
+            color: var(--vintage-cream);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .example-chip:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--gold-accent);
+            transform: translateY(-2px);
+        }
+
+        .tips-section {
+            background: rgba(45, 90, 61, 0.2);
+            border-left: 4px solid var(--studio-green);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            animation: fadeIn 1s ease-out 0.6s both;
+        }
+
+        .tips-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: var(--studio-green);
+            margin-bottom: 12px;
+        }
+
+        .tips-list {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--vintage-cream);
+            opacity: 0.9;
+        }
+
+        .tips-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .tips-list li::before {
+            content: '♪';
+            position: absolute;
+            left: 0;
+            color: var(--studio-green);
+        }
+
+        .error-message {
+            background: rgba(194, 59, 34, 0.2);
+            border: 1px solid var(--warm-red);
+            border-radius: 12px;
+            padding: 20px;
+            color: var(--vintage-cream);
+            margin-top: 20px;
+            display: none;
+        }
+
+        .history-section {
+            margin-top: 50px;
+            animation: fadeIn 1s ease-out 0.8s both;
+        }
+
+        .history-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 32px;
+            letter-spacing: 3px;
+            color: var(--gold-accent);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateX(5px);
+        }
+
+        .history-date {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--metallic);
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--metallic);
+        }
+
+        .info-box {
+            background: rgba(45, 90, 61, 0.2);
+            border-left: 4px solid var(--studio-green);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .info-box p {
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+            color: var(--vintage-cream);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="wave-decoration">
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+        <span class="wave-bar"></span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">SUNO V5 STUDIO</h1>
+            <p class="subtitle">Professional Prompt Generator + Song Analyzer</p>
+        </div>
+
+        <div class="studio-grid">
+            <div class="panel">
+                <h2 class="panel-title">Modalità Creazione</h2>
+                
+                <div class="input-group">
+                    <label class="label">Scegli come creare</label>
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="creationMode" value="describe" checked style="width: auto; cursor: pointer;" onchange="toggleCreationMode()">
+                            <span style="font-size: 14px;">📝 Descrivi da zero</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="creationMode" value="analyze" style="width: auto; cursor: pointer;" onchange="toggleCreationMode()">
+                            <span style="font-size: 14px;">🔍 Analizza canzone esistente</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Modalità Descrizione -->
+                <div id="describeMode">
+                    <div class="input-group">
+                        <label class="label">Tipo di composizione</label>
+                        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="songType" value="withLyrics" checked style="width: auto; cursor: pointer;">
+                                <span style="font-size: 14px;">Con Testo</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="songType" value="instrumental" style="width: auto; cursor: pointer;">
+                                <span style="font-size: 14px;">Solo Strumentale</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="label">Descrivi la tua canzone in linguaggio naturale</label>
+                        <textarea id="userInput" placeholder="Esempio: Voglio creare una ballata malinconica su un amore perduto, con chitarra acustica e archi, stile anni '80, voce maschile emotiva..."></textarea>
+                    </div>
+
+                    <div class="example-prompts">
+                        <div class="example-chip" onclick="setExample('Una canzone rock energica con chitarre elettriche distorte e batteria potente, stile grunge anni 90')">🎸 Rock Grunge</div>
+                        <div class="example-chip" onclick="setExample('Trap italiana con beat moderno, 808 profonde, autotune sulla voce, atmosfera urbana e notturna')">🎤 Trap Urbana</div>
+                        <div class="example-chip" onclick="setExample('Musica elettronica ambient rilassante con synth pad morbidi e beat downtempo, ideale per meditazione')">🎹 Ambient Chill</div>
+                        <div class="example-chip" onclick="setExample('Jazz swing strumentale con pianoforte, contrabbasso e batteria, atmosfera da club degli anni 40')">🎺 Jazz Vintage</div>
+                    </div>
+                </div>
+
+                <!-- Modalità Analisi -->
+                <div id="analyzeMode" style="display: none;">
+                    <div class="input-group">
+                        <label class="label">Titolo della canzone da analizzare</label>
+                        <input type="text" id="analyzeSongTitle" placeholder="Es: Blinding Lights, Bohemian Rhapsody, Shallow...">
+                    </div>
+                    <div class="input-group">
+                        <label class="label">Artista / Interprete</label>
+                        <input type="text" id="analyzeArtist" placeholder="Es: The Weeknd, Queen, Lady Gaga...">
+                    </div>
+                    <div class="input-group">
+                        <label class="label">Tipo di composizione risultante</label>
+                        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="analyzeSongType" value="withLyrics" checked style="width: auto; cursor: pointer;">
+                                <span style="font-size: 14px;">Con Testo</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="analyzeSongType" value="instrumental" style="width: auto; cursor: pointer;">
+                                <span style="font-size: 14px;">Solo Strumentale</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <p>💡 <strong>Claude analizzerà la canzone originale</strong> (genere, strumenti, BPM, atmosfera, struttura) e creerà un brano NUOVO nello stesso stile, senza copiare testo o melodia. Lo STYLE PROMPT non includerà nomi di artisti come richiesto da Suno.</p>
+                    </div>
+                </div>
+
+                <div class="tips-section">
+                    <h3 class="tips-title">💡 Consigli per ottenere i migliori risultati</h3>
+                    <ul class="tips-list">
+                        <li>Descrivi l'atmosfera emotiva della canzone</li>
+                        <li>Specifica gli strumenti musicali principali</li>
+                        <li>Indica il genere musicale o artisti di riferimento</li>
+                        <li>Menziona il tipo di voce (maschile/femminile, registro)</li>
+                        <li>Descrivi il ritmo (veloce, lento, ballad, uptempo)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Informazioni Aggiuntive</h2>
+                <div class="input-group">
+                    <label class="label">Tema del testo (opzionale)</label>
+                    <input type="text" id="lyricsTheme" placeholder="Es: amore perduto, libertà, viaggio notturno...">
+                </div>
+                <div class="input-group">
+                    <label class="label">Lingua preferita per il testo</label>
+                    <input type="text" id="language" placeholder="Es: Italiano, Inglese, Spagnolo..." value="Italiano">
+                </div>
+                <div class="input-group">
+                    <label class="label">Riferimenti artistici (opzionale)</label>
+                    <input type="text" id="artistReference" placeholder="Es: Vasco Rossi, Pink Floyd, Billie Eilish...">
+                </div>
+                <div class="input-group">
+                    <label class="label">Note speciali</label>
+                    <textarea id="specialNotes" placeholder="Qualsiasi altra indicazione specifica che vuoi includere nel prompt..." style="min-height: 100px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button class="button" onclick="generatePrompt()" id="generateBtn" style="margin-bottom: 20px;">
+            <span id="generateBtnText">🎵 Genera Prompt Professionale</span>
+        </button>
+
+        <div class="loading" id="loading">
+            ⚡ Sto analizzando la tua richiesta e creando il prompt perfetto...
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="output-section" id="outputSection" style="display: none;">
+            <div class="output-card">
+                <div class="output-title">
+                    <span id="lyricsTitle">🎤 Testo della Canzone Completo</span>
+                    <button class="copy-btn" onclick="copyToClipboard('lyricsOutput', this)">Copia</button>
+                </div>
+                <div class="output-content" id="lyricsOutput"></div>
+            </div>
+
+            <div class="output-card">
+                <div class="output-title">
+                    🎨 Style Prompt per Suno V5
+                    <button class="copy-btn" onclick="copyToClipboard('styleOutput', this)">Copia</button>
+                </div>
+                <div class="output-content" id="styleOutput"></div>
+            </div>
+        </div>
+
+        <div class="history-section" id="historySection" style="display: none;">
+            <h2 class="history-title">📚 Cronologia delle Generazioni</h2>
+            <div id="historyContainer"></div>
+        </div>
+
+        <div class="footer">
+            <p>Suno V5 Prompt Studio + Analyzer | Powered by Claude AI | © 2025</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Crea musica straordinaria con prompt professionali e analisi di canzoni esistenti</p>
+        </div>
+    </div>
+
+    <script>
+        let generationHistory = [];
+        let currentLyrics = '';
+        let currentStyle = '';
+        let currentSongType = 'withLyrics';
+
+        window.addEventListener('load', () => {
+            document.getElementById('userInput').focus();
+        });
+
+        function toggleCreationMode() {
+            const mode = document.querySelector('input[name="creationMode"]:checked').value;
+            const describeMode = document.getElementById('describeMode');
+            const analyzeMode = document.getElementById('analyzeMode');
+            const btnText = document.getElementById('generateBtnText');
+            
+            if (mode === 'describe') {
+                describeMode.style.display = 'block';
+                analyzeMode.style.display = 'none';
+                btnText.textContent = '🎵 Genera Prompt Professionale';
+            } else {
+                describeMode.style.display = 'none';
+                analyzeMode.style.display = 'block';
+                btnText.textContent = '🔍 Analizza e Genera Stile Simile';
+            }
+        }
+
+        function setExample(text) {
+            document.getElementById('userInput').value = text;
+            document.getElementById('userInput').focus();
+        }
+
+        async function generatePrompt() {
+            const creationMode = document.querySelector('input[name="creationMode"]:checked').value;
+            
+            let userInput, lyricsTheme, language, artistReference, specialNotes, songType;
+            
+            if (creationMode === 'describe') {
+                userInput = document.getElementById('userInput').value.trim();
+                lyricsTheme = document.getElementById('lyricsTheme').value.trim();
+                language = document.getElementById('language').value.trim() || 'Italiano';
+                artistReference = document.getElementById('artistReference').value.trim();
+                specialNotes = document.getElementById('specialNotes').value.trim();
+                songType = document.querySelector('input[name="songType"]:checked').value;
+                
+                if (!userInput) {
+                    showError('Per favore, inserisci una descrizione della canzone che vuoi creare.');
+                    return;
+                }
+            } else {
+                const songTitle = document.getElementById('analyzeSongTitle').value.trim();
+                const artist = document.getElementById('analyzeArtist').value.trim();
+                lyricsTheme = document.getElementById('lyricsTheme').value.trim();
+                language = document.getElementById('language').value.trim() || 'Italiano';
+                specialNotes = document.getElementById('specialNotes').value.trim();
+                songType = document.querySelector('input[name="analyzeSongType"]:checked').value;
+                
+                if (!songTitle || !artist) {
+                    showError('Per favore, inserisci sia il titolo della canzone che l\'artista.');
+                    return;
+                }
+                
+                userInput = `ANALISI: "${songTitle}" di ${artist}`;
+                artistReference = artist;
+            }
+
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('outputSection').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                let claudePrompt = buildClaudePrompt(
+                    creationMode, 
+                    userInput, 
+                    songType, 
+                    language, 
+                    lyricsTheme, 
+                    artistReference, 
+                    specialNotes
+                );
+
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 8000,
+                        messages: [{
+                            role: 'user',
+                            content: claudePrompt
+                        }],
+                        tools: [{
+                            type: 'web_search_20250305',
+                            name: 'web_search'
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let fullText = '';
+                for (const block of data.content) {
+                    if (block.type === 'text') {
+                        fullText += block.text;
+                    }
+                }
+
+                if (!fullText) {
+                    throw new Error('Nessun contenuto ricevuto');
+                }
+
+                const parsedResult = parseClaudeResponse(fullText);
+                displayResults(parsedResult, songType);
+                
+                currentLyrics = parsedResult.lyrics;
+                currentStyle = parsedResult.style;
+                currentSongType = songType;
+                
+                addToHistory(userInput, parsedResult, songType);
+
+            } catch (error) {
+                console.error('Errore:', error);
+                showError(`Si è verificato un errore: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function buildClaudePrompt(mode, userInput, songType, language, theme, artistRef, notes) {
+            const baseInstructions = `Sei un esperto nella creazione di contenuti per Suno V5.
+
+${mode === 'analyze' ? `L'utente vuole creare una canzone ispirata a: ${userInput}
+
+IMPORTANTE: Cerca sul web informazioni dettagliate sulla canzone originale (genere, BPM, strumenti, voce, produzione, struttura, atmosfera, temi). Poi crea una NUOVA canzone nello STESSO STILE ma con contenuti originali.` : `L'utente vuole creare: ${userInput}`}
+
+${theme ? `Tema del testo: ${theme}` : ''}
+${artistRef && mode === 'describe' ? `Riferimenti artistici: ${artistRef}` : ''}
+${notes ? `Note speciali: ${notes}` : ''}
+Lingua del testo: ${language}
+
+Fornisci ESATTAMENTE 2 sezioni SEPARATE:
+
+**${songType === 'instrumental' ? 'SONG STRUCTURE' : 'SONG LYRICS'}**
+${songType === 'instrumental' ? 
+`STRUTTURA STRUMENTALE con annotazioni DETTAGLIATISSIME in INGLESE tra [parentesi quadre]. NESSUN TESTO.
+
+IMPORTANTE: Le annotazioni devono essere MOLTO SPECIFICHE e DETTAGLIATE. Per OGNI sezione includi:
+- Descrizione esatta degli strumenti che suonano (es: "A killer, driving bassline starts - funky and melodic")
+- Come evolvono gli arrangiamenti (es: "Bass guitar gets busier, very syncopated")
+- Effetti e produzione (es: "Shimmering synth flourish with delay")
+- Dinamiche ed energia (es: "Tension rises", "Massive explosion of sound")
+- Pattern ritmici specifici (es: "Punchy drums: Boom-chack-boom-chack")
+- Cambio di atmosfera (es: "Atmosphere becomes lush and psychedelic")
+
+Esempio di formato dettagliato:
+[Intro]
+[A driving bassline starts immediately - melodic and groovy]
+[Electric guitar stabs with reverb]
+[Drums kick in: Boom-chack pattern]
+
+[Verse]
+[Bass gets busier with walking patterns]
+[Subtle strings enter in background]
+
+[Chorus]
+[Massive wall of sound - full instrumentation]
+[Layered guitars with distortion]
+
+[Bridge]
+[Music shifts - atmospheric and spacious]
+[Solo: 16s guitar solo with delay and wah]
+
+[Outro]
+[Gradual fade with echoing synths]
+[Final drum crash]` :
+`TESTO COMPLETO in ${language} con annotazioni DETTAGLIATISSIME in INGLESE tra [parentesi quadre].
+
+IMPORTANTE: Le annotazioni devono essere MOLTO SPECIFICHE e DETTAGLIATE. Per OGNI sezione includi:
+- Descrizione esatta degli strumenti (es: "A killer, driving bassline - funky and melodic")
+- Stile vocale e delivery (es: "Vocal: Charismatic and rhythmic")
+- Come evolvono gli arrangiamenti (es: "Add subtle Mellotron strings")
+- Effetti e produzione (es: "Shimmering synth with delay")
+- Dinamiche ed energia (es: "Tension rises", "Stadium hit feel")
+- Pattern ritmici (es: "Punchy drums: Boom-chack-boom-chack")
+
+Esempio di formato dettagliato:
+[Intro]
+[A driving bassline starts immediately - melodic and groovy]
+[Electric guitar stabs with reverb and delay]
+[Drums kick in with punchy pattern: Boom-chack-boom-chack]
+
+[Verse 1]
+[Vocal: Confident and rhythmic delivery]
+testo in ${language}
+[Bass guitar gets busier with walking patterns]
+
+[Pre-Chorus]
+[Harmony vocals enter - Building tension]
+testo del pre-chorus
+
+[Chorus]
+[Massive explosion of sound - Very catchy and anthemic]
+[Full band with layered guitars and synths]
+TESTO RITORNELLO
+
+[Verse 2]
+[Keep energy high, add subtle strings in background]
+secondo verso
+
+[Bridge]
+[The music shifts key - Atmosphere becomes dreamy]
+[Vocal: Soft and layered with harmonies]
+testo bridge
+[Powerful drum fill leads back to main groove]
+
+[Chorus]
+[Full energy - Stadium anthem feel]
+ritornello finale
+
+[Outro]
+[Song builds to massive wall of sound]
+[The music fades with echoing vocals]
+[Final drum crash]
+[End]`}
+
+---
+
+**STYLE PROMPT**
+Una riga con tag separati da virgole.
+
+REGOLE CRITICHE:
+- NON menzionare MAI nomi di artisti
+- Solo descrizioni tecniche: "Genere, BPM, ${songType === 'instrumental' ? 'instrumental' : 'tipo voce'}, strumenti, atmosfera, produzione"
+
+Esempio: "Synthwave pop, 171 BPM, ${songType === 'instrumental' ? 'instrumental' : 'male falsetto'}, analog synths, 80s production"`;
+
+            return baseInstructions;
+        }
+
+        function parseClaudeResponse(text) {
+            const result = { lyrics: '', style: '' };
+
+            const lyricsMatch = text.match(/\*\*SONG (?:LYRICS|STRUCTURE)\*\*:?\s*\n([\s\S]*?)(?=\n+\*\*STYLE PROMPT\*\*|\n+---|\n+$)/i);
+            const styleMatch = text.match(/\*\*STYLE PROMPT\*\*:?\s*\n([\s\S]*?)$/i);
+
+            if (lyricsMatch) {
+                result.lyrics = lyricsMatch[1].trim();
+                result.lyrics = result.lyrics.replace(/\n*\*\*STYLE PROMPT\*\*[\s\S]*$/i, '');
+            }
+            
+            if (styleMatch) {
+                result.style = styleMatch[1].trim();
+                result.style = result.style.replace(/^\*\*|\*\*$/g, '').replace(/^["']|["']$/g, '');
+            }
+
+            if (!result.style && result.lyrics) {
+                const lines = result.lyrics.split('\n');
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i].trim();
+                    if (line && (line.includes('BPM') || (line.includes(',') && line.length < 300 && !line.startsWith('[')))) {
+                        result.style = lines.slice(i).join('\n').trim();
+                        result.lyrics = lines.slice(0, i).join('\n').trim();
+                        break;
+                    }
+                }
+            }
+
+            if (!result.lyrics && !result.style) {
+                const sections = text.split(/\n\n+/);
+                if (sections.length >= 2) {
+                    result.style = sections[sections.length - 1];
+                    result.lyrics = sections.slice(0, -1).join('\n\n');
+                } else {
+                    result.lyrics = text;
+                    result.style = "Modern production, 120 BPM";
+                }
+            }
+
+            return result;
+        }
+
+        function displayResults(result, songType) {
+            document.getElementById('lyricsOutput').textContent = result.lyrics || 'Nessun contenuto generato';
+            document.getElementById('styleOutput').textContent = result.style || 'Nessuno stile generato';
+            
+            const lyricsTitle = document.getElementById('lyricsTitle');
+            lyricsTitle.textContent = songType === 'instrumental' ? '🎼 Struttura Strumentale' : '🎤 Testo della Canzone Completo';
+            
+            document.getElementById('outputSection').style.display = 'block';
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function addToHistory(input, result, songType) {
+            const timestamp = new Date().toLocaleString('it-IT');
+            generationHistory.unshift({
+                timestamp,
+                input,
+                result,
+                songType
+            });
+
+            if (generationHistory.length > 10) {
+                generationHistory = generationHistory.slice(0, 10);
+            }
+
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const historyContainer = document.getElementById('historyContainer');
+            const historySection = document.getElementById('historySection');
+
+            if (generationHistory.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+
+            historySection.style.display = 'block';
+            historyContainer.innerHTML = generationHistory.map((item, index) => `
+                <div class="history-item">
+                    <div class="history-date">${item.timestamp} - ${item.songType === 'instrumental' ? '🎼 Strumentale' : '🎤 Con Testo'}</div>
+                    <div style="font-size: 14px; margin-bottom: 10px; color: var(--vintage-cream);">
+                        <strong>Richiesta:</strong> ${item.input.substring(0, 100)}${item.input.length > 100 ? '...' : ''}
+                    </div>
+                    <button class="copy-btn" onclick="restoreFromHistory(${index})" style="margin-top: 10px;">
+                        🔄 Ripristina questa generazione
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function restoreFromHistory(index) {
+            const item = generationHistory[index];
+            displayResults(item.result, item.songType || 'withLyrics');
+            
+            currentLyrics = item.result.lyrics;
+            currentStyle = item.result.style;
+            currentSongType = item.songType || 'withLyrics';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function copyToClipboard(elementId, buttonElement) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            // Metodo compatibile che funziona sempre
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                if (successful) {
+                    const originalText = buttonElement.textContent;
+                    buttonElement.textContent = '✓ Copiato!';
+                    buttonElement.style.background = 'var(--studio-green)';
+                    buttonElement.style.color = 'white';
+                    
+                    setTimeout(() => {
+                        buttonElement.textContent = originalText;
+                        buttonElement.style.background = 'transparent';
+                        buttonElement.style.color = 'var(--gold-accent)';
+                    }, 2000);
+                } else {
+                    showError('Impossibile copiare. Seleziona manualmente il testo e premi Ctrl+C');
+                }
+            } catch (err) {
+                document.body.removeChild(textarea);
+                console.error('Errore copia:', err);
+                showError('Impossibile copiare. Seleziona manualmente il testo e premi Ctrl+C');
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        // Registrazione Service Worker per PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registrato:', reg.scope))
+                    .catch(err => console.log('Errore Service Worker:', err));
+            });
+        }
+
+        // Gestione installazione PWA
+        let deferredPrompt;
+        const installBtn = document.createElement('button');
+        installBtn.className = 'button';
+        installBtn.innerHTML = '<span>📱 Installa App</span>';
+        installBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; width: auto; padding: 12px 24px; z-index: 1000; display: none;';
+        document.body.appendChild(installBtn);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Scelta utente: ${outcome}`);
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installata con successo!');
+            installBtn.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
